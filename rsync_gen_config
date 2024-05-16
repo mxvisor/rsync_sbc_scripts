@@ -1,0 +1,45 @@
+#!/bin/bash
+
+if [ ! -f rsync_sbc.config ];then
+
+read -p "please enter SBC IP or press ENTER (default: 1.1.1.1)": IP
+read -p "please enter USER or press ENTER (default :root)": USER
+read -p "please enter PASSWORD or press ENTER (default: root)": PASSWORD
+read -p "please enter REMOTE_DIR or press ENTER (default: /$(basename $PWD)/)": REMOTE_DIR
+read -p "please enter LOCAL_DIR or press ENTER (default: $PWD/)": LOCAL_DIR
+
+[[ ! $IP ]] && IP=1.1.1.1
+[[ ! $USER ]] && USER=root
+[[ ! $PASSWORD ]] && PASSWORD=root
+[[ ! $REMOTE_DIR ]] && REMOTE_DIR=/$(basename $PWD)/
+[[ ! $LOCAL_DIR ]] && LOCAL_DIR=$PWD/
+
+cat <<EOF >rsync_sbc.config
+IP=$IP
+USER=$USER
+PASSWORD=$PASSWORD
+REMOTE_DIR=$REMOTE_DIR
+LOCAL_DIR=$LOCAL_DIR
+EOF
+
+fi
+
+source $PWD/rsync_sbc.config
+
+OLD_IP=$IP
+
+while true;do
+    ping -c1 -W4 $IP &>/dev/null
+    if [[ $? != 0 ]];then
+	read -p "no connetion to SBC with IP=$IP, please enter new SBC IP: " IP
+    else
+	break
+    fi
+done
+
+if [[ $OLD_IP != $IP ]];then
+    echo "SBC IP changed to: "$IP
+    sed -i "s,^\(IP=\).*,\1$IP,g" $PWD/rsync_sbc.config
+fi
+
+ssh-keygen -R $IP &>/dev/null  && ssh-keyscan $IP >> ~/.ssh/known_hosts 2>/dev/null

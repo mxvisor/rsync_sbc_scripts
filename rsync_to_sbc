@@ -1,0 +1,6 @@
+#!/bin/bash
+
+source rsync_gen_config
+
+sshpass -p $PASSWORD rsync -avz --mkpath --delete-excluded --exclude 'rsync_sbc.config' --progress $LOCAL_DIR $USER@$IP:$REMOTE_DIR
+read -p "press any key..."
